@@ -1,0 +1,17 @@
+MODEL:
+  VALID_SCALE: [0, 1, 2]
+  DISCRIMINATOR:
+    TYPE: 'style'
+SOLVER:
+  BATCH_SIZE: 8
+  PRETRAINED: True
+  PRETRAINED_MODEL: 'output/singlescale_baseline_Adam/model/iteration_900000.pth'
+  ADV_LOSS_FN: 'hinge'
+  DETECTOR:
+    INIT_TRAIN_ITER: 0
+    ADV_LOSS_WEIGHT: 0.1
+  DISCRIMINATOR:
+    INIT_TRAIN_ITER: 100
+    LR: 5e-4
+    GP: False
+    GP_WEIGHT: 100.

@@ -1,0 +1,16 @@
+#MODEL:
+#  VALID_SCALE: [0, 1, 2]  # [2]
+#  DISCRIMINATOR:
+#    TYPE: 'residual'
+SOLVER:
+  BATCH_SIZE: 8
+#  PRETRAINED: True
+##  PRETRAINED_MODEL: 'output/singlescale_baseline_Adam/model/iteration_900000.pth'
+#  EXTRACTOR:
+#    WEIGHT_FIX: True
+#  DETECTOR:
+#    WEIGHT_FIX: True
+#  DISCRIMINATOR:
+#    INIT_TRAIN_ITER: 50
+#DATASET:
+#  TRAIN: ('coco_2014_minival',)
