@@ -10,7 +10,10 @@ ModelWithLoss -> forward(): applying binary masks to the output of discriminator
  ```
 # ---------------------  
 _C.MODEL.DISCRIMINATOR.MASKING = True  # using masking (True) or not (False) in discriminator
-_C.MODEL.DISCRIMINATOR.MASKING_CLASS_AGNOSTIC = True  # instance_level (True) or class_level (False)
+_C.MODEL.DISCRIMINATOR.MASKING_CLASS_AGNOSTIC = False  # instance_level (True) or class_level (False)
+# Normalize the loss only if (MODEL.DISCRIMINATOR.MASKING) = True AND
+#   (MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK = True)
+_C.MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK = True
 # ---------------------
 ```
 adding setting for 
@@ -41,6 +44,13 @@ to apply M on O, we can get new output: (b, chxNc, h, w), or (bxNc, ch, h, w), b
 So I use the output format (bxNc, ch, h, w) so that the second dimension is always 3.
 
 # Preliminary experiments
+
+For the same discriminator output, 
+normalized discriminator loss : tensor(1.4225, device='cuda:0')
+not normalized discriminator loss: tensor(0.0066, device='cuda:0')
+
+
+Training with normalized discriminator loss
 ```
 ===> Iter: 0000050, LR: 0.000500, Cost: 32.72s, Eta: 6 days, 19:36:21, Detector Loss: 864.042052, Discriminator Loss: -0.000103
 ===> Iter: 0000100, LR: 0.000500, Cost: 24.95s, Eta: 6 days, 0:11:56, Detector Loss: 74.589113, Discriminator Loss: -0.000048
@@ -100,5 +110,16 @@ So I use the output format (bxNc, ch, h, w) so that the second dimension is alwa
 ===> Iter: 0002800, LR: 0.000500, Cost: 25.60s, Eta: 5 days, 7:12:38, Detector Loss: 6.090125, Discriminator Loss: -0.000154
 ===> Iter: 0002850, LR: 0.000500, Cost: 25.70s, Eta: 5 days, 7:13:09, Detector Loss: 6.091262, Discriminator Loss: -0.000084
 ===> Iter: 0002900, LR: 0.000500, Cost: 25.61s, Eta: 5 days, 7:13:10, Detector Loss: 6.160134, Discriminator Loss: -0.000183
+
+```
+
+Training with normalized discriminator loss:
+```
+===> Iter: 0000050, LR: 0.000500, Cost: 75.64s, Eta: 15 days, 18:10:32, Detector Loss: 863.905340, Discriminator Loss: -0.000852
+===> Iter: 0000100, LR: 0.000500, Cost: 29.03s, Eta: 10 days, 21:38:24, Detector Loss: 74.373735, Discriminator Loss: -0.000719
+===> Iter: 0000150, LR: 0.000500, Cost: 29.37s, Eta: 9 days, 7:21:27, Detector Loss: 14.621235, Discriminator Loss: -0.000447
+===> Iter: 0000200, LR: 0.000500, Cost: 29.22s, Eta: 8 days, 12:02:00, Detector Loss: 10.617451, Discriminator Loss: -0.000531
+===> Iter: 0000250, LR: 0.000500, Cost: 29.33s, Eta: 8 days, 0:32:27, Detector Loss: 9.369847, Discriminator Loss: -0.000396
+===> Iter: 0000300, LR: 0.000500, Cost: 29.34s, Eta: 7 days, 16:53:03, Detector Loss: 8.674080, Discriminator Loss: -0.000283
 
 ```

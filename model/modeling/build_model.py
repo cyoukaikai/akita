@@ -44,6 +44,7 @@ class ModelWithLoss(nn.Module):
 
         # ------------------------
         self.discriminator_masking = cfg.MODEL.DISCRIMINATOR.MASKING
+        self.normalize_loss = cfg.MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK
         # ------------------------
 
     def forward(self, images, targets, pretrain=False):
@@ -60,7 +61,7 @@ class ModelWithLoss(nn.Module):
                 pred = self.detector(feat)  # CenterNet with backbone resnet18, 'hm', 'wh', 'reg', single detector
                 adv_pred = self.discriminator(feat)  # torch.Size([32, 3, 128, 128])
 
-                if self.discriminator_masking:
+                if self.discriminator_masking:  # Changing the predictions to 0s for locations with value 0 in the mask
                     b, ch, h, w = adv_pred.shape  # torch.Size([32, 3, 128, 128])
                     # masks (b, Nc, h, w), Nc number of classes
                     mask = targets[i]['binary_masks']  # num_mask, height, width
@@ -78,8 +79,12 @@ class ModelWithLoss(nn.Module):
         # targets = [{k:v.to('cuda', non_blocking=True) for k, v in target.items()} for target in targets]
 
         det_loss, det_loss_dict = self.loss_fn(features, predictions, adv_predictions, targets)
-        dis_loss, dis_loss_dict = self.d_loss_fn(adv_predictions)
-
+        # dis_loss, dis_loss_dict = self.d_loss_fn(adv_predictions)
+        # -------------------------
+        # list of masks, they are token as input but not necessarily used
+        masks = [ret['binary_masks'] for ret in targets]
+        dis_loss, dis_loss_dict = self.d_loss_fn(adv_predictions, masks)
+        # -------------------------
         loss_dict = {**det_loss_dict, **dis_loss_dict}
 
         if self.gp:

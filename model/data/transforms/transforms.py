@@ -401,7 +401,7 @@ class MakeHeatmap:
             'ind': torch.from_numpy(ind),
             'wh': torch.from_numpy(wh),
 
-            'binary_masks': torch.from_numpy(binary_masks),  # ---------------------
+            'binary_masks': torch.from_numpy(binary_masks).bool(),  # ---------------------
             }
         
         if self.image_target:

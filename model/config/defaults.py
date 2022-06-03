@@ -28,6 +28,9 @@ _C.MODEL.DISCRIMINATOR.NORMALIZATION = 'spectral'
 # ---------------------
 _C.MODEL.DISCRIMINATOR.MASKING = True  # using masking (True) or not (False) in discriminator
 _C.MODEL.DISCRIMINATOR.MASKING_CLASS_AGNOSTIC = False  # instance_level (True) or class_level (False)
+# Normalize the loss only if (MODEL.DISCRIMINATOR.MASKING) = True AND
+#   (MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK = True)
+_C.MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK = True
 # ---------------------
 
 _C.SOLVER = CN()

@@ -14,8 +14,18 @@ class DetectorLoss(nn.Module):
         self.hm_loss_fn = FocalLoss()
         self.wh_loss_fn = RegL1Loss()
         self.reg_loss_fn = RegL1Loss()
+
+        # --------------------------
+        self.discriminator_masking = cfg.MODEL.DISCRIMINATOR.MASKING
+        self.normalize_loss = cfg.MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK
         if cfg.SOLVER.ADV_LOSS_FN == 'wasserstain':
-            self.adv_loss_fn = WassersteinLoss(d_train=False)
+            # Normalize the loss only if the discriminator output is masked AND we explicitly set to normalize
+            if not (self.discriminator_masking and self.normalize_loss):
+                self.adv_loss_fn = WassersteinLoss(d_train=False)
+            else:
+                self.adv_loss_fn = WassersteinLossWithMasking(d_train=False)
+        # --------------------------
+
         elif cfg.SOLVER.ADV_LOSS_FN == 'hinge':
             self.adv_loss_fn = WassersteinLoss(d_train=False)
 
@@ -44,9 +54,15 @@ class DetectorLoss(nn.Module):
                 reg_loss = self.reg_loss_fn(pred[j]['reg'], target['reg_mask'], target['ind'], target['reg'])
 
                 loss += (self.hm_loss_weight * hm_loss) + (self.wh_loss_weight * wh_loss) + (self.reg_loss_weight * reg_loss)
-            loss /= len(pred)    
-        
-            adv_loss = self.adv_loss_fn(adv_pred, i)
+            loss /= len(pred)
+
+            # --------------------
+            if not (self.discriminator_masking and self.normalize_loss):
+                adv_loss = self.adv_loss_fn(adv_pred, i)
+            else:
+                adv_loss = self.adv_loss_fn(adv_pred, i, mask=target['binary_masks'])
+            # --------------------
+
             loss += self.adv_loss_weight * adv_loss
 
             if self.recon_loss:
@@ -69,21 +85,33 @@ class DiscriminatorLoss(nn.Module):
     def __init__(self, cfg):
         super(DiscriminatorLoss, self).__init__()
 
+        # --------------------------
+        self.discriminator_masking = cfg.MODEL.DISCRIMINATOR.MASKING
+        self.normalize_loss = cfg.MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK
         if cfg.SOLVER.ADV_LOSS_FN == 'wasserstain':
-            self.adv_loss_fn = WassersteinLoss(d_train=True)
+            # Normalize the loss only if the discriminator output is masked AND we explicitly set to normalize
+            if not (self.discriminator_masking and self.normalize_loss):
+                self.adv_loss_fn = WassersteinLoss(d_train=True)
+            else:
+                self.adv_loss_fn = WassersteinLossWithMasking(d_train=True)
+        # --------------------------
+
         elif cfg.SOLVER.ADV_LOSS_FN == 'hinge':
             self.adv_loss_fn = HingeLoss(d_train=True)
         self.adv_loss_weight = cfg.SOLVER.DISCRIMINATOR.ADV_LOSS_WEIGHT
 
         self.valid_scale = cfg.MODEL.VALID_SCALE
 
-    def forward(self, adv_predictions):
+    def forward(self, adv_predictions, masks=None):
         loss, loss_dict = 0, {}
         for i in self.valid_scale:
             adv_pred = adv_predictions[i]
-
-            adv_loss = self.adv_loss_fn(adv_pred, i)
-
+            # --------------------
+            if not (self.discriminator_masking and self.normalize_loss):
+                adv_loss = self.adv_loss_fn(adv_pred, i)
+            else:
+                adv_loss = self.adv_loss_fn(adv_pred, i, mask=masks[i])
+            # --------------------
             loss += self.adv_loss_weight * adv_loss
 
             loss_dict['dis_adv_loss:{}'.format(i)] = adv_loss.detach()
@@ -92,7 +120,6 @@ class DiscriminatorLoss(nn.Module):
         loss_dict['total_adv_loss'] = loss.detach()
 
         return loss, loss_dict
-
 
 
 class FocalLoss(nn.Module):
@@ -164,6 +191,33 @@ class WassersteinLoss(nn.Module):
             pred[:, i] *= -1.       
 
         return torch.mean(pred)
+
+
+class WassersteinLossWithMasking(nn.Module):
+    def __init__(self, d_train):
+        super(WassersteinLossWithMasking, self).__init__()
+        self.d_train = d_train
+
+    def forward(self, pred, i, mask, scaling=None):
+        """
+        pred: shape (bxNc, 3, h, w), 3 = len(MODEL.VALID_SCALE), Nc = 1 if instance_level, else num_classes
+        mask: the mask a single example, shape (b, Nc, h, w)
+        """
+
+        if scaling is not None:
+            pred *= scaling
+
+        if not self.d_train:
+            pred[:, i] *= -1.
+        else:
+            pred *= -1.
+            pred[:, i] *= -1.
+
+        num_output_class = pred.shape[1]  # 3
+        b, Nc, h, w = mask.shape
+        # bxNc, h, w  -> (bxNc, 3, h, w) the same dimension with pred
+        mask = mask.view(-1, h, w).unsqueeze(dim=1).expand(b * Nc, num_output_class, h, w)
+        return torch.mean(pred[mask])  # ------------ only 1 locations will be used for torch.mean.
 
 
 class HingeLoss(nn.Module):
