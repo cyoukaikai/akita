@@ -1,4 +1,28 @@
-# Modification:
+# Modification (v2 2022-6-15):
+
+1. `train.py`
+
+```
+parser.add_argument('--attribute_step', type=int, default=1000, help='')
+```
+
+2. `trainer.py`
+
+`do_train()`
+```
+      if args.attribute_step != 0 and iteration % args.attribute_step == 0:
+            print('Model Interpretation for trained Model...')
+            model.eval()
+            _, _, _ = model(images, targets, attribute=True, iter=iteration)
+            model.train()
+```
+
+3. model/modeling/build_model.py
+
+add function
+
+
+# Modification (v1):
 
 1. model/data/transforms/transforms.py
 MakeHeatmap: adding GT box based binary mask  
