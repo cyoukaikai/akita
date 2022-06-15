@@ -146,6 +146,14 @@ def do_train(args, cfg, model, optimizer, scheduler, d_optimizer, d_scheduler, s
 
             model.train()
 
+        # ----------------------
+        if args.attribute_step != 0 and iteration % args.attribute_step == 0:
+            print('Model Interpretation for trained Model...')
+            model.eval()
+            _, _, _ = model(images, targets, attribute=True, iter=iteration)
+            model.train()
+        # ----------------------
+
 
 def do_pretrain_for_mp(args, cfg, model, optimizer, scheduler, d_optimizer, d_scheduler, data_loader, summary_writer):
     max_iter = len(data_loader['train']) + args.resume_iter

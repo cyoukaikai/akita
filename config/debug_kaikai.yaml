@@ -1,9 +1,16 @@
-#MODEL:
+MODEL:
 #  VALID_SCALE: [0, 1, 2]  # [2]
 #  DISCRIMINATOR:
 #    TYPE: 'residual'
+  DISCRIMINATOR:
+    MASKING: False  # using masking (True) or not (False) in discriminator
+    MASKING_CLASS_AGNOSTIC: False  # instance_level (True) or class_level (False)
+  # Normalize the loss only if (MODEL.DISCRIMINATOR.MASKING) = True AND
+  #   (MODEL.DISCRIMINATOR.NORMALIZE_LOSS_WITH_MASK = True)
+    NORMALIZE_LOSS_WITH_MASK: True
 SOLVER:
-  BATCH_SIZE: 8
+  BATCH_SIZE: 2
+
 #  PRETRAINED: True
 ##  PRETRAINED_MODEL: 'output/singlescale_baseline_Adam/model/iteration_900000.pth'
 #  EXTRACTOR:

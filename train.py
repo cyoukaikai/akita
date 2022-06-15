@@ -35,6 +35,10 @@ def parse_args():
     parser.add_argument('--resume_iter', type=int, default=0, help='')
     parser.add_argument('--gradient_logging', action='store_true')
 
+    # ------------------
+    parser.add_argument('--attribute_step', type=int, default=1000, help='')
+    # ------------------
+
     return parser.parse_args()
 
 
@@ -108,6 +112,10 @@ def main():
     else:
         output_dirname = args.output_dirname
     cfg.OUTPUT_DIR = output_dirname
+    # ------------------
+    if len(cfg.OUTPUT_DIR) > 0 and not os.path.exists(cfg.OUTPUT_DIR):
+        os.makedirs(cfg.OUTPUT_DIR)
+    # -------------------
     cfg.freeze()
 
     assert torch.cuda.is_available(), 'GPU not found'
