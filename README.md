@@ -1,4 +1,12 @@
 # Modification (v2 2022-6-15):
+```
+AssertionError: Layer tensors are saved on multiple devices, however
+unable to access device ID list from the `forward_fn`. Device ID list
+must be accessible from `forward_fn`. For example, they can be retrieved
+if `forward_fn` is a model of type `DataParallel`. It is used for
+identifying device batch ordering.
+
+```
 
 1. `train.py`
 
